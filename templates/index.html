@@ -1,0 +1,1342 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-bs-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HTML Preview Server</title>
+<link href="/static/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
+<link href="/static/vendor/bootstrap-icons/bootstrap-icons.min.css" rel="stylesheet">
+<style>
+  :root {
+    --app-bg: #f4f7fb;
+    --app-line: #d8e2ee;
+    --app-ink: #18212b;
+    --app-muted: #5f6f82;
+    --app-brand: #1769aa;
+    --app-brand-2: #0e8a68;
+    --app-soft: #eaf3fb;
+  }
+
+  body {
+    background: linear-gradient(180deg, #f8fbff 0%, #f3f7fb 100%);
+    color: var(--app-ink);
+    min-height: 100vh;
+  }
+
+  .app-shell {
+    max-width: 1360px;
+  }
+
+  .surface {
+    border: 1px solid var(--app-line);
+    border-radius: .75rem;
+    box-shadow: 0 .5rem 1.75rem rgba(24, 33, 43, .06);
+    background: #fff;
+  }
+
+  .hero-panel {
+    overflow: hidden;
+    position: relative;
+    background:
+      linear-gradient(135deg, rgba(23, 105, 170, .10), rgba(14, 138, 104, .08)),
+      #fff;
+  }
+
+  .hero-panel::after {
+    content: "";
+    position: absolute;
+    inset: auto -10% -35% auto;
+    width: 320px;
+    height: 320px;
+    background: radial-gradient(circle, rgba(23, 105, 170, .12), rgba(23, 105, 170, 0));
+    pointer-events: none;
+  }
+
+  .metric-card .metric-label {
+    color: var(--app-muted);
+    font-size: .85rem;
+  }
+
+  .metric-card .metric-value {
+    font-size: 1.9rem;
+    font-weight: 700;
+    letter-spacing: 0;
+  }
+
+  .upload-zone {
+    border: 2px dashed #bcd0e3;
+    border-radius: .9rem;
+    background: linear-gradient(180deg, #fbfdff 0%, #f4f9ff 100%);
+    min-height: 220px;
+    transition: .2s ease;
+    cursor: pointer;
+  }
+
+  .upload-zone:hover,
+  .upload-zone.dragover {
+    border-color: var(--app-brand);
+    background: linear-gradient(180deg, #f8fcff 0%, #edf6ff 100%);
+  }
+
+  .upload-glyph {
+    width: 64px;
+    height: 64px;
+    border-radius: 1rem;
+    background: var(--app-soft);
+    color: var(--app-brand);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+  }
+
+  .project-card {
+    transition: transform .16s ease, box-shadow .16s ease;
+  }
+
+  .project-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 1rem 2rem rgba(24, 33, 43, .08);
+  }
+
+  .project-link {
+    background: #f7faff;
+    border: 1px solid #deebf7;
+    border-radius: .75rem;
+  }
+
+  .project-meta {
+    color: var(--app-muted);
+    font-size: .88rem;
+  }
+
+  .project-meta span {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    margin-right: .9rem;
+    margin-bottom: .4rem;
+  }
+
+  .empty-illustration {
+    width: 72px;
+    height: 72px;
+    border-radius: 1rem;
+    background: #edf4fb;
+    color: var(--app-brand);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+  }
+
+  .login-stage {
+    min-height: 100vh;
+  }
+
+  .login-card {
+    max-width: 440px;
+    width: 100%;
+  }
+
+  .section-subtitle {
+    color: var(--app-muted);
+  }
+
+  .projects-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: .75rem;
+  }
+
+  .projects-toolbar .input-group {
+    width: 260px;
+    max-width: 100%;
+  }
+
+  .projects-toolbar #filterBar {
+    width: 150px;
+    min-width: 150px;
+  }
+
+  .projects-host.list-view .project-col {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+
+  .projects-host.list-view .project-card {
+    box-shadow: none !important;
+    transform: none !important;
+  }
+
+  .project-list-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+  }
+
+  .project-main {
+    min-width: 0;
+  }
+
+  .project-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .project-title-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .5rem;
+    margin-bottom: .45rem;
+  }
+
+  .project-source {
+    color: var(--app-muted);
+    font-size: .85rem;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+  }
+
+  .project-summary {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0;
+    border: 1px solid #e2eaf3;
+    border-radius: .8rem;
+    overflow: hidden;
+    background: #fbfdff;
+  }
+
+  .project-body {
+    display: grid;
+    grid-template-columns: minmax(320px, 1.15fr) minmax(260px, .85fr);
+    gap: 1rem;
+    align-items: start;
+  }
+
+  .summary-item {
+    min-width: 0;
+    padding: .8rem .9rem;
+    border-right: 1px solid #e2eaf3;
+  }
+
+  .summary-item:last-child {
+    border-right: 0;
+  }
+
+  .summary-label {
+    color: var(--app-muted);
+    font-size: .74rem;
+    margin-bottom: .2rem;
+  }
+
+  .summary-value {
+    font-size: .88rem;
+    font-weight: 600;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+  }
+
+  .project-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: .5rem;
+    max-width: 220px;
+    flex-shrink: 0;
+  }
+
+  .project-actions .btn {
+    white-space: nowrap;
+  }
+
+  .upload-rules {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .75rem;
+  }
+
+  .rule-card {
+    border: 1px solid #e2eaf3;
+    border-radius: .8rem;
+    background: #fbfdff;
+    padding: .9rem 1rem;
+  }
+
+  .rule-card h4 {
+    font-size: .92rem;
+    margin-bottom: .45rem;
+  }
+
+  .rule-card ul {
+    margin: 0;
+    padding-left: 1rem;
+    color: var(--app-muted);
+    font-size: .84rem;
+  }
+
+  .rule-card li + li {
+    margin-top: .3rem;
+  }
+
+  .sticky-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 1020;
+    backdrop-filter: blur(12px);
+    background: rgba(248, 251, 255, .82);
+    border-bottom: 1px solid rgba(216, 226, 238, .9);
+  }
+
+  @media (max-width: 767px) {
+    .metric-card .metric-value {
+      font-size: 1.45rem;
+    }
+
+    .projects-toolbar {
+      justify-content: stretch;
+    }
+
+    .projects-toolbar .input-group,
+    .projects-toolbar #filterBar {
+      width: 100%;
+      min-width: 0;
+    }
+
+    .upload-rules {
+      grid-template-columns: 1fr;
+    }
+
+    .project-summary {
+      grid-template-columns: 1fr;
+      gap: 0;
+    }
+
+    .summary-item {
+      border-right: 0;
+      border-bottom: 1px solid #e2eaf3;
+    }
+
+    .summary-item:last-child {
+      border-bottom: 0;
+    }
+
+    .project-head,
+    .project-body {
+      display: block;
+    }
+
+    .project-actions {
+      justify-content: flex-start;
+      max-width: none;
+      margin-top: .85rem;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="position-fixed top-0 end-0 p-3" style="z-index: 1080">
+  <div id="toastContainer" class="toast-container"></div>
+</div>
+
+{% if not authenticated and not need_project_password %}
+<div class="container login-stage d-flex align-items-center justify-content-center py-5">
+  <div class="surface p-4 p-md-5 login-card">
+    <div class="d-flex align-items-center gap-3 mb-4">
+      <div class="upload-glyph rounded-4"><i class="bi bi-window-stack"></i></div>
+      <div>
+        <h1 class="h3 mb-1">HTML Preview Server</h1>
+        <div class="text-secondary">上传 HTML 或 ZIP，生成可分享的预览链接</div>
+      </div>
+    </div>
+
+    <div class="mb-4 text-secondary">
+      适合页面草稿、多页静态项目、AI 生成页面和客户预览。
+    </div>
+
+    <form id="loginForm" class="vstack gap-3">
+      <!-- Step 1: Username -->
+      <div id="loginStep1">
+        <div>
+          <label for="loginUsername" class="form-label">用户名</label>
+          <input type="text" class="form-control form-control-lg" id="loginUsername" placeholder="你的名字" maxlength="20" autocomplete="off" autofocus>
+        </div>
+      </div>
+      <!-- Step 2: Password -->
+      <div id="loginStep2" style="display:none" class="vstack gap-3">
+        <div id="loginPwNew" style="display:none" class="vstack gap-3">
+          <div>
+            <label for="newPassword" class="form-label">设置密码</label>
+            <input type="password" class="form-control form-control-lg" id="newPassword" placeholder="至少4个字符">
+          </div>
+          <div>
+            <label for="confirmPassword" class="form-label">确认密码</label>
+            <input type="password" class="form-control form-control-lg" id="confirmPassword" placeholder="再次输入密码">
+          </div>
+        </div>
+        <div id="loginPwExist" style="display:none">
+          <label for="loginPassword" class="form-label">密码</label>
+          <input type="password" class="form-control form-control-lg" id="loginPassword" placeholder="输入密码">
+        </div>
+        <small class="text-secondary" id="loginWelcomeText"></small>
+      </div>
+      <div class="invalid-feedback d-block" id="loginError" style="display:none !important;"></div>
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary btn-lg flex-grow-1" id="loginSubmit">下一步</button>
+        <button type="button" class="btn btn-outline-secondary btn-lg" id="loginBack" style="display:none">返回</button>
+      </div>
+    </form>
+
+    <div class="d-flex align-items-center gap-3 my-4 text-secondary small">
+      <div class="flex-grow-1 border-top"></div>
+      <span>或</span>
+      <div class="flex-grow-1 border-top"></div>
+    </div>
+
+    <button class="btn btn-outline-secondary w-100" id="showAdminLogin">管理员登录</button>
+  </div>
+</div>
+
+<div class="modal fade" id="adminLoginModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header">
+        <h5 class="modal-title">管理员登录</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="adminLoginForm" class="vstack gap-3">
+          <div>
+            <label for="adminPassword" class="form-label">管理密码</label>
+            <input type="password" class="form-control" id="adminPassword" placeholder="管理密码">
+            <div class="invalid-feedback d-block" id="adminLoginError" style="display:none !important;">密码错误</div>
+          </div>
+          <button type="submit" class="btn btn-primary">登录</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% if need_project_password %}
+<div class="container login-stage d-flex align-items-center justify-content-center py-5">
+  <div class="surface p-4 p-md-5 login-card">
+    <div class="d-flex align-items-center gap-3 mb-4">
+      <div class="upload-glyph rounded-4"><i class="bi bi-shield-lock"></i></div>
+      <div>
+        <h1 class="h3 mb-1">{{ project_name }}</h1>
+        <div class="text-secondary">此项目需要密码才能访问</div>
+      </div>
+    </div>
+
+    <form id="projectPwForm" data-id="{{ project_id }}" class="vstack gap-3">
+      <div>
+        <label for="projectPwInput" class="form-label">访问密码</label>
+        <input type="password" class="form-control form-control-lg" id="projectPwInput" placeholder="输入访问密码" autofocus>
+        <div class="invalid-feedback d-block" id="projectPwError" style="display:none !important;">密码错误，请重试</div>
+      </div>
+      <button type="submit" class="btn btn-primary btn-lg">访问预览</button>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+<div class="app" id="app" style="display:{% if authenticated %}block{% else %}none{% endif %}">
+  <div class="sticky-topbar">
+    <div class="container-fluid app-shell px-3 px-lg-4 py-3">
+      <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
+        <div class="d-flex align-items-center gap-3">
+          <div class="upload-glyph"><i class="bi bi-window-sidebar"></i></div>
+          <div>
+            <div class="d-flex flex-wrap align-items-center gap-2">
+              <h1 class="h4 mb-0">HTML Preview Server</h1>
+              {% if is_admin %}
+              <span class="badge text-bg-warning">管理员</span>
+              {% elif username %}
+              <span class="badge text-bg-primary">{{ username }}</span>
+              {% endif %}
+            </div>
+            <div class="section-subtitle small">上传 HTML 或 ZIP，自动生成链接、二维码和访问控制</div>
+          </div>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+          {% if username and not is_admin %}
+          <button class="btn btn-outline-secondary" data-action="change-password"><i class="bi bi-key me-1"></i>修改密码</button>
+          <button class="btn btn-outline-secondary" data-action="switch-user"><i class="bi bi-person-gear me-1"></i>切换用户</button>
+          {% endif %}
+          <button class="btn btn-outline-dark" data-action="logout"><i class="bi bi-box-arrow-right me-1"></i>退出</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container-fluid app-shell px-3 px-lg-4 py-4">
+    <div class="surface hero-panel p-4 p-lg-5 mb-4">
+      <div class="row g-4 align-items-center">
+        <div class="col-lg-7">
+          <span class="badge rounded-pill text-bg-primary-subtle text-primary-emphasis mb-3">Bootstrap 5.3.8 UI</span>
+          <h2 class="display-6 fw-semibold mb-3">把静态页面分享这件事做得像一个现代工具</h2>
+          <p class="lead text-secondary mb-4">
+            适合演示稿、营销页草稿、课程作业、客户确认页，以及 AI 生成的多页站点预览。
+          </p>
+          <div class="d-flex flex-wrap gap-2">
+            <span class="badge rounded-pill text-bg-light border">HTML 单文件</span>
+            <span class="badge rounded-pill text-bg-light border">ZIP 项目</span>
+            <span class="badge rounded-pill text-bg-light border">密码保护</span>
+            <span class="badge rounded-pill text-bg-light border">二维码</span>
+            <span class="badge rounded-pill text-bg-light border">过期时间</span>
+          </div>
+        </div>
+        <div class="col-lg-5">
+          <div class="row g-3" id="statsGrid">
+            <div class="col-6">
+              <div class="surface metric-card p-3 h-100">
+                <div class="metric-label mb-1">项目数</div>
+                <div class="metric-value" id="statProjects">0</div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="surface metric-card p-3 h-100">
+                <div class="metric-label mb-1">总访问</div>
+                <div class="metric-value" id="statVisits">0</div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="surface metric-card p-3 h-100">
+                <div class="metric-label mb-1">受保护</div>
+                <div class="metric-value" id="statLocked">0</div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="surface metric-card p-3 h-100">
+                <div class="metric-label mb-1">总大小</div>
+                <div class="metric-value fs-4" id="statSize">0 B</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-xl-4">
+        <div class="surface p-4 h-100">
+          <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+            <div>
+              <h3 class="h5 mb-1">上传预览</h3>
+              <div class="section-subtitle small">仅支持 HTML 单文件和包含入口文件的 ZIP 项目包。</div>
+            </div>
+            <span class="badge text-bg-success-subtle text-success-emphasis">在线发布</span>
+          </div>
+
+          <div class="upload-zone d-flex flex-column justify-content-center align-items-center text-center p-4" id="uploadZone">
+            <div class="upload-glyph mb-3"><i class="bi bi-cloud-arrow-up"></i></div>
+            <div class="fw-semibold mb-2">拖拽文件到这里，或点击选择</div>
+            <div class="text-secondary small">适合单页 HTML、完整静态站点 ZIP、课程页面和营销页草稿</div>
+            <input type="file" id="fileInput" accept=".html,.htm,.zip" class="d-none">
+          </div>
+
+          <div class="mt-3" id="uploadProgress" style="display:none">
+            <div class="d-flex justify-content-between small mb-2">
+              <span class="text-secondary">上传进度</span>
+              <span id="uploadPercent">0%</span>
+            </div>
+            <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100">
+              <div class="progress-bar" id="uploadBar" style="width:0%"></div>
+            </div>
+            <div class="small text-secondary mt-2" id="uploadStatus">上传中...</div>
+          </div>
+
+          <div class="alert alert-danger mt-3 mb-0" id="uploadError" style="display:none"></div>
+
+          <div class="alert alert-success mt-3 mb-0" id="uploadResult" style="display:none">
+            <div class="fw-semibold mb-2">预览链接已生成</div>
+            <div class="input-group mb-2">
+              <input class="form-control" id="uploadResultUrl" readonly>
+              <button class="btn btn-outline-primary" data-action="copy-upload-result">复制</button>
+            </div>
+            <button class="btn btn-sm btn-primary" data-action="open-upload-result"><i class="bi bi-box-arrow-up-right me-1"></i>打开预览</button>
+          </div>
+
+          <div class="upload-rules mt-3">
+            <div class="rule-card">
+              <h4>上传规则</h4>
+              <ul>
+                <li>单文件页面：`.html` 或 `.htm`</li>
+                <li>完整项目包：`.zip`</li>
+                <li>ZIP 内必须包含 `index.html` 或 `index.htm`</li>
+              </ul>
+            </div>
+            <div class="rule-card">
+              <h4>常见失败原因</h4>
+              <ul>
+                <li>上传了图片、文档、PDF、视频等非 HTML 文件</li>
+                <li>ZIP 里没有入口文件</li>
+                <li>项目资源不完整，导致预览空白或样式丢失</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-xl-8">
+        <div class="surface p-4">
+          <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3 mb-3">
+            <div>
+              <h3 class="h5 mb-1">项目列表</h3>
+              <div class="section-subtitle small">搜索名称、链接 ID、上传者、源文件名或入口文件</div>
+            </div>
+            <div class="projects-toolbar w-100 w-lg-auto">
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                <input class="form-control" id="projectSearch" placeholder="搜索项目" oninput="loadProjects()">
+              </div>
+              <div id="filterBar" style="display:{% if is_admin %}block{% else %}none{% endif %};">
+                <select id="userFilter" class="form-select" onchange="loadProjects()">
+                  <option value="">全部用户</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="row g-3 projects-host list-view" id="projectGrid"></div>
+
+          <div class="text-center py-5" id="emptyState" style="display:none">
+            <div class="empty-illustration mx-auto mb-3"><i class="bi bi-collection"></i></div>
+            <h4 class="h5">还没有上传任何项目</h4>
+            <div class="text-secondary">从左侧上传一个 HTML 文件或 ZIP 项目开始</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header">
+        <h5 class="modal-title">编辑项目</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="vstack gap-3">
+          <div>
+            <label class="form-label" for="editName">项目名称</label>
+            <input type="text" class="form-control" id="editName" placeholder="项目名称">
+          </div>
+          <div>
+            <label class="form-label" for="editId">自定义链接 ID</label>
+            <input type="text" class="form-control" id="editId" placeholder="例如 landing-demo">
+            <div class="form-text">仅允许 3-64 位小写字母、数字和中划线。</div>
+          </div>
+          <div>
+            <label class="form-label" for="editPassword">访问密码</label>
+            <input type="text" class="form-control" id="editPassword" placeholder="留空保持不变">
+            <div class="form-check mt-2" id="editClearPwWrap" style="display:none">
+              <input class="form-check-input" type="checkbox" id="editClearPw">
+              <label class="form-check-label small text-danger" for="editClearPw">移除密码保护</label>
+            </div>
+          </div>
+          <div>
+            <label class="form-label" for="editExpires">过期时间</label>
+            <input type="datetime-local" class="form-control" id="editExpires">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline-secondary" data-bs-dismiss="modal">取消</button>
+        <button class="btn btn-primary" data-action="save-edit">保存</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="qrModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header">
+        <h5 class="modal-title">扫码预览</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center">
+        <img id="qrImage" src="" alt="QR Code" class="img-fluid rounded border">
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="changePwModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header">
+        <h5 class="modal-title">修改密码</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="changePwForm" class="vstack gap-3">
+          <div>
+            <label for="oldPw" class="form-label">当前密码</label>
+            <input type="password" class="form-control" id="oldPw" placeholder="输入当前密码">
+          </div>
+          <div>
+            <label for="newPw" class="form-label">新密码</label>
+            <input type="password" class="form-control" id="newPw" placeholder="至少4个字符">
+          </div>
+          <div>
+            <label for="confirmNewPw" class="form-label">确认新密码</label>
+            <input type="password" class="form-control" id="confirmNewPw" placeholder="再次输入新密码">
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline-secondary" data-bs-dismiss="modal">取消</button>
+        <button class="btn btn-primary" data-action="save-password">保存</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/static/vendor/bootstrap/bootstrap.bundle.min.js"></script>
+<script>
+const BASE = location.origin;
+const IS_ADMIN = {{ 'true' if is_admin else 'false' }};
+let editingProjectId = null;
+let editingProjectHasPassword = false;
+let lastUploadUrl = '';
+
+const modalInstances = {};
+
+function getModal(id) {
+  if (!modalInstances[id]) {
+    modalInstances[id] = bootstrap.Modal.getOrCreateInstance(document.getElementById(id));
+  }
+  return modalInstances[id];
+}
+
+function toast(message, tone = 'primary') {
+  const item = document.createElement('div');
+  item.className = `toast align-items-center text-bg-${tone} border-0`;
+  item.setAttribute('role', 'alert');
+  item.setAttribute('aria-live', 'assertive');
+  item.setAttribute('aria-atomic', 'true');
+  item.innerHTML = `
+    <div class="d-flex">
+      <div class="toast-body">${escapeHtml(message)}</div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    </div>
+  `;
+  document.getElementById('toastContainer').appendChild(item);
+  const instance = bootstrap.Toast.getOrCreateInstance(item, { delay: 2800 });
+  item.addEventListener('hidden.bs.toast', () => item.remove());
+  instance.show();
+}
+
+function escapeHtml(value) {
+  const node = document.createElement('div');
+  node.textContent = String(value ?? '');
+  return node.innerHTML;
+}
+
+function showUploadError(message) {
+  const error = document.getElementById('uploadError');
+  const result = document.getElementById('uploadResult');
+  error.textContent = message;
+  error.style.display = 'block';
+  result.style.display = 'none';
+}
+
+function clearUploadFeedback() {
+  document.getElementById('uploadError').style.display = 'none';
+  document.getElementById('uploadResult').style.display = 'none';
+}
+
+function formatBytes(bytes) {
+  const value = Number(bytes || 0);
+  if (!value) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB'];
+  const index = Math.min(Math.floor(Math.log(value) / Math.log(1024)), units.length - 1);
+  return `${(value / Math.pow(1024, index)).toFixed(index ? 1 : 0)} ${units[index]}`;
+}
+
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  }
+}
+
+function validateUploadFile(file) {
+  if (!file) return '请选择要上传的文件';
+
+  const lowerName = String(file.name || '').toLowerCase();
+  if (!(lowerName.endsWith('.html') || lowerName.endsWith('.htm') || lowerName.endsWith('.zip'))) {
+    return '仅支持上传 .html、.htm 或 .zip 文件';
+  }
+
+  return '';
+}
+
+let loginState = 'username';
+let pendingUsername = '';
+
+function showLoginError(msg) {
+  const error = document.getElementById('loginError');
+  if (!error) return;
+  error.textContent = msg;
+  error.style.display = 'block';
+}
+
+function hideLoginError() {
+  const error = document.getElementById('loginError');
+  if (error) error.style.display = 'none';
+}
+
+function showLoginStep(step) {
+  const step1 = document.getElementById('loginStep1');
+  const step2 = document.getElementById('loginStep2');
+  const pwNew = document.getElementById('loginPwNew');
+  const pwExist = document.getElementById('loginPwExist');
+  const backBtn = document.getElementById('loginBack');
+  const submitBtn = document.getElementById('loginSubmit');
+  const welcome = document.getElementById('loginWelcomeText');
+  hideLoginError();
+
+  if (step === 'username') {
+    step1.style.display = 'block';
+    step2.style.display = 'none';
+    backBtn.style.display = 'none';
+    submitBtn.textContent = '下一步';
+    loginState = 'username';
+  } else if (step === 'new') {
+    step1.style.display = 'none';
+    step2.style.display = 'flex';
+    pwNew.style.display = 'flex';
+    pwExist.style.display = 'none';
+    backBtn.style.display = 'block';
+    submitBtn.textContent = '设置密码并进入';
+    welcome.textContent = `欢迎！请为「${pendingUsername}」设置密码`;
+    loginState = 'new_password';
+  } else if (step === 'exist') {
+    step1.style.display = 'none';
+    step2.style.display = 'flex';
+    pwNew.style.display = 'none';
+    pwExist.style.display = 'block';
+    backBtn.style.display = 'block';
+    submitBtn.textContent = '登录';
+    welcome.textContent = `欢迎回来，${pendingUsername}`;
+    loginState = 'existing_password';
+  }
+}
+
+document.getElementById('loginBack')?.addEventListener('click', () => showLoginStep('username'));
+
+document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  hideLoginError();
+
+  if (loginState === 'username') {
+    const name = document.getElementById('loginUsername').value.trim();
+    if (!name) { showLoginError('用户名不能为空'); return; }
+    if (name.length > 20) { showLoginError('用户名最多20个字符'); return; }
+    pendingUsername = name;
+    try {
+      const res = await fetch(`/api/check-user?username=${encodeURIComponent(name)}`);
+      const data = await res.json();
+      showLoginStep(data.exists ? 'exist' : 'new');
+    } catch {
+      toast('网络错误', 'danger');
+    }
+    return;
+  }
+
+  if (loginState === 'new_password') {
+    const pw = document.getElementById('newPassword').value;
+    const cpw = document.getElementById('confirmPassword').value;
+    if (!pw || pw.length < 4) { showLoginError('密码至少4个字符'); return; }
+    if (pw !== cpw) { showLoginError('两次密码不一致'); return; }
+    const form = new FormData();
+    form.append('username', pendingUsername);
+    form.append('password', pw);
+    try {
+      const res = await fetch('/api/register', { method: 'POST', body: form });
+      if (res.ok) { location.reload(); return; }
+      const data = await res.json();
+      showLoginError(data.detail || '注册失败');
+    } catch {
+      toast('网络错误', 'danger');
+    }
+    return;
+  }
+
+  if (loginState === 'existing_password') {
+    const pw = document.getElementById('loginPassword').value;
+    if (!pw) { showLoginError('请输入密码'); return; }
+    const form = new FormData();
+    form.append('username', pendingUsername);
+    form.append('password', pw);
+    try {
+      const res = await fetch('/api/login', { method: 'POST', body: form });
+      if (res.ok) { location.reload(); return; }
+      const data = await res.json();
+      showLoginError(data.detail || '登录失败');
+    } catch {
+      toast('网络错误', 'danger');
+    }
+  }
+});
+
+document.getElementById('showAdminLogin')?.addEventListener('click', () => {
+  getModal('adminLoginModal').show();
+});
+
+document.getElementById('adminLoginForm')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const pw = document.getElementById('adminPassword').value;
+  const form = new FormData();
+  form.append('password', pw);
+  try {
+    const res = await fetch('/api/auth', { method: 'POST', body: form });
+    if (res.ok) {
+      location.reload();
+      return;
+    }
+    document.getElementById('adminLoginError').style.display = 'block';
+  } catch {
+    toast('网络错误', 'danger');
+  }
+});
+
+document.getElementById('projectPwForm')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const form = e.target;
+  const pid = form.dataset.id;
+  const pw = document.getElementById('projectPwInput').value;
+  const fd = new FormData();
+  fd.append('password', pw);
+  try {
+    const res = await fetch(`/p/${pid}/auth`, { method: 'POST', body: fd });
+    if (res.ok) {
+      location.reload();
+      return;
+    }
+    document.getElementById('projectPwError').style.display = 'block';
+  } catch {
+    toast('网络错误', 'danger');
+  }
+});
+
+async function logout() {
+  await fetch('/api/logout', { method: 'POST' });
+  location.reload();
+}
+
+async function switchUser() {
+  await fetch('/api/logout', { method: 'POST' });
+  location.reload();
+}
+
+document.addEventListener('click', (event) => {
+  const button = event.target.closest('[data-action]');
+  if (!button) return;
+
+  const { action, projectId, projectName, projectHasPassword, projectExpires } = button.dataset;
+
+  switch (action) {
+    case 'logout':
+      logout();
+      break;
+    case 'switch-user':
+      switchUser();
+      break;
+    case 'change-password':
+      showChangePwModal();
+      break;
+    case 'save-password':
+      savePassword();
+      break;
+    case 'copy-upload-result':
+      copyUploadResult();
+      break;
+    case 'open-upload-result':
+      openUploadResult();
+      break;
+    case 'save-edit':
+      saveEdit();
+      break;
+    case 'copy-link':
+      copyLink(projectId);
+      break;
+    case 'open-project':
+      window.open(`/p/${projectId}`, '_blank');
+      break;
+    case 'show-qr':
+      showQr(projectId);
+      break;
+    case 'download-project':
+      downloadProject(projectId);
+      break;
+    case 'open-settings':
+      openEditModal(projectId, projectName, projectHasPassword === 'true', projectExpires);
+      break;
+    case 'delete-project':
+      confirmDelete(projectId, projectName);
+      break;
+  }
+});
+
+function populateUserFilter(projects) {
+  const select = document.getElementById('userFilter');
+  if (!select) return;
+  const current = select.value;
+  const users = [...new Set(projects.map(p => p.owner || '未知'))].sort();
+  select.innerHTML = '<option value="">全部用户</option>' +
+    users.map(u => `<option value="${escapeHtml(u)}" ${u === current ? 'selected' : ''}>${escapeHtml(u)}</option>`).join('');
+}
+
+function applySearch(projects) {
+  const q = document.getElementById('projectSearch')?.value.trim().toLowerCase();
+  if (!q) return projects;
+  return projects.filter(p => [p.name, p.id, p.owner, p.original_filename, p.entry_file]
+    .some(v => String(v || '').toLowerCase().includes(q)));
+}
+
+function renderStats(projects) {
+  const count = projects.length;
+  const visits = projects.reduce((sum, p) => sum + Number(p.visit_count || 0), 0);
+  const locked = projects.filter(p => p.password).length;
+  const size = projects.reduce((sum, p) => sum + Number(p.total_size || 0), 0);
+  document.getElementById('statProjects').textContent = count;
+  document.getElementById('statVisits').textContent = visits;
+  document.getElementById('statLocked').textContent = locked;
+  document.getElementById('statSize').textContent = formatBytes(size);
+}
+
+function renderProjects(projects) {
+  const grid = document.getElementById('projectGrid');
+  const empty = document.getElementById('emptyState');
+  renderStats(projects);
+
+  if (!projects.length) {
+    grid.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+
+  empty.style.display = 'none';
+  grid.innerHTML = projects.map(p => `
+    <div class="col-12 col-md-6 project-col">
+        <div class="card h-100 border-0 shadow-sm project-card">
+          <div class="card-body p-4">
+            <div class="project-list-row">
+              <div class="project-head">
+                <div class="project-main">
+                  <div class="project-title-row">
+                    <h4 class="h6 mb-0">${escapeHtml(p.name)}</h4>
+                    ${p.expired ? '<span class="badge text-bg-danger">已过期</span>' : ''}
+                    ${p.password ? '<span class="badge text-bg-warning">有密码</span>' : ''}
+                    ${IS_ADMIN && p.owner ? `<span class="badge text-bg-light border">${escapeHtml(p.owner)}</span>` : ''}
+                  </div>
+                  <div class="project-source">${escapeHtml(p.original_filename || '未记录源文件')}</div>
+                </div>
+                <div class="project-actions">
+                  <button class="btn btn-primary btn-sm" data-action="open-project" data-project-id="${escapeHtml(p.id)}"><i class="bi bi-box-arrow-up-right me-1"></i>打开</button>
+                  <div class="dropdown">
+                    <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                      更多
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                      <li><button class="dropdown-item" data-action="copy-link" data-project-id="${escapeHtml(p.id)}"><i class="bi bi-link-45deg me-2"></i>复制链接</button></li>
+                      <li><button class="dropdown-item" data-action="show-qr" data-project-id="${escapeHtml(p.id)}"><i class="bi bi-qr-code me-2"></i>二维码</button></li>
+                      <li><button class="dropdown-item" data-action="download-project" data-project-id="${escapeHtml(p.id)}"><i class="bi bi-download me-2"></i>下载项目</button></li>
+                      <li><button class="dropdown-item" data-action="open-settings" data-project-id="${escapeHtml(p.id)}" data-project-name="${escapeHtml(p.name)}" data-project-has-password="${!!p.password}" data-project-expires="${escapeHtml(p.expires_at || '')}"><i class="bi bi-sliders me-2"></i>项目设置</button></li>
+                      <li><hr class="dropdown-divider"></li>
+                      <li><button class="dropdown-item text-danger" data-action="delete-project" data-project-id="${escapeHtml(p.id)}" data-project-name="${escapeHtml(p.name)}"><i class="bi bi-trash3 me-2"></i>删除项目</button></li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+              <div class="project-body">
+                <div class="project-summary">
+                  <div class="summary-item">
+                    <div class="summary-label">创建时间</div>
+                    <div class="summary-value">${p.created_at?.slice(0, 16) || '-'}</div>
+                  </div>
+                  <div class="summary-item">
+                    <div class="summary-label">访问</div>
+                    <div class="summary-value">${p.visit_count || 0} 次</div>
+                  </div>
+                  <div class="summary-item">
+                    <div class="summary-label">文件</div>
+                    <div class="summary-value">${p.file_count || 0} 个 / ${formatBytes(p.total_size)}</div>
+                  </div>
+                  <div class="summary-item">
+                    <div class="summary-label">入口</div>
+                    <div class="summary-value">${escapeHtml(p.entry_file || '-')}</div>
+                  </div>
+                </div>
+                <div class="project-link project-link-wrap p-3">
+                  <a class="text-decoration-none fw-medium d-block text-break" href="/p/${p.id}" target="_blank">${BASE}/p/${p.id}</a>
+                  ${p.expires_at ? `<div class="small text-secondary mt-2"><i class="bi bi-hourglass-split me-1"></i>${p.expired ? '已过期' : p.expires_at?.slice(0, 16)}</div>` : '<div class="small text-secondary mt-2"><i class="bi bi-infinity me-1"></i>永不过期</div>'}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function loadProjects() {
+  const res = await fetch('/api/projects');
+  if (res.status === 401) {
+    location.reload();
+    return;
+  }
+
+  const projects = await res.json();
+  if (IS_ADMIN) {
+    populateUserFilter(projects);
+    const filterUser = document.getElementById('userFilter').value;
+    let filtered = filterUser ? projects.filter(p => (p.owner || '未知') === filterUser) : projects;
+    filtered = applySearch(filtered);
+    renderProjects(filtered);
+  } else {
+    renderProjects(applySearch(projects));
+  }
+}
+
+async function copyLink(id) {
+  const url = `${BASE}/p/${id}`;
+  await copyText(url);
+  toast('链接已复制', 'success');
+}
+
+function downloadProject(id) {
+  window.location.href = `/api/projects/${id}/download`;
+}
+
+async function copyUploadResult() {
+  if (!lastUploadUrl) return;
+  await copyText(lastUploadUrl);
+  toast('链接已复制', 'success');
+}
+
+function openUploadResult() {
+  if (lastUploadUrl) window.open(lastUploadUrl, '_blank');
+}
+
+const uploadZone = document.getElementById('uploadZone');
+const fileInput = document.getElementById('fileInput');
+
+uploadZone?.addEventListener('click', () => fileInput.click());
+uploadZone?.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  uploadZone.classList.add('dragover');
+});
+uploadZone?.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+uploadZone?.addEventListener('drop', (e) => {
+  e.preventDefault();
+  uploadZone.classList.remove('dragover');
+  if (e.dataTransfer.files.length) uploadFile(e.dataTransfer.files[0]);
+});
+fileInput?.addEventListener('change', () => {
+  if (fileInput.files.length) uploadFile(fileInput.files[0]);
+});
+
+async function uploadFile(file) {
+  const progress = document.getElementById('uploadProgress');
+  const bar = document.getElementById('uploadBar');
+  const status = document.getElementById('uploadStatus');
+  const percent = document.getElementById('uploadPercent');
+  const validationError = validateUploadFile(file);
+
+  if (validationError) {
+    progress.style.display = 'none';
+    showUploadError(validationError);
+    toast(validationError, 'danger');
+    if (fileInput) fileInput.value = '';
+    return;
+  }
+
+  progress.style.display = 'block';
+  clearUploadFeedback();
+  bar.style.width = '0%';
+  percent.textContent = '0%';
+  status.textContent = '上传中...';
+
+  const form = new FormData();
+  form.append('file', file);
+
+  const xhr = new XMLHttpRequest();
+  xhr.open('POST', '/api/upload');
+
+  xhr.upload.onprogress = (e) => {
+    if (!e.lengthComputable) return;
+    const pct = Math.round(e.loaded / e.total * 100);
+    bar.style.width = pct + '%';
+    percent.textContent = pct + '%';
+  };
+
+  xhr.onload = () => {
+    if (xhr.status === 200) {
+      const data = JSON.parse(xhr.responseText);
+      bar.style.width = '100%';
+      percent.textContent = '100%';
+      status.textContent = '上传成功';
+      lastUploadUrl = `${BASE}/p/${data.project.id}`;
+      document.getElementById('uploadResultUrl').value = lastUploadUrl;
+      document.getElementById('uploadError').style.display = 'none';
+      document.getElementById('uploadResult').style.display = 'block';
+      toast('上传成功', 'success');
+      if (fileInput) fileInput.value = '';
+      loadProjects();
+      return;
+    }
+    let msg = '上传失败';
+    try {
+      msg = JSON.parse(xhr.responseText).detail || msg;
+    } catch {}
+    status.textContent = msg;
+    showUploadError(msg);
+    toast(msg, 'danger');
+    if (fileInput) fileInput.value = '';
+  };
+
+  xhr.onerror = () => {
+    status.textContent = '网络错误';
+    showUploadError('网络错误，请稍后重试');
+    toast('网络错误', 'danger');
+    if (fileInput) fileInput.value = '';
+  };
+
+  xhr.send(form);
+}
+
+function openEditModal(id, name, hasPassword, expires) {
+  editingProjectId = id;
+  editingProjectHasPassword = hasPassword;
+  document.getElementById('editName').value = name;
+  document.getElementById('editId').value = '';
+  document.getElementById('editPassword').value = '';
+  document.getElementById('editPassword').placeholder = hasPassword ? '留空保持不变，输入新值可修改' : '留空表示不设密码';
+  document.getElementById('editClearPwWrap').style.display = hasPassword ? 'block' : 'none';
+  document.getElementById('editClearPw').checked = false;
+  document.getElementById('editExpires').value = expires ? expires.slice(0, 16) : '';
+  getModal('editModal').show();
+}
+
+async function saveEdit() {
+  const data = {
+    name: document.getElementById('editName').value,
+    expires_at: document.getElementById('editExpires').value || '',
+  };
+
+  const pw = document.getElementById('editPassword').value;
+  if (pw) {
+    data.password = pw;
+  } else if (document.getElementById('editClearPw').checked) {
+    data.clear_password = true;
+  }
+
+  const newId = document.getElementById('editId').value.trim();
+  if (newId) {
+    if (!/^[a-z0-9][a-z0-9-]{2,63}$/.test(newId)) {
+      toast('链接 ID 需为 3-64 位小写字母、数字或中划线', 'danger');
+      return;
+    }
+    data.id = newId;
+  }
+
+  const res = await fetch(`/api/projects/${editingProjectId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+
+  if (res.ok) {
+    getModal('editModal').hide();
+    toast('保存成功', 'success');
+    loadProjects();
+    return;
+  }
+
+  const err = await res.json();
+  toast(err.detail || '保存失败', 'danger');
+}
+
+async function confirmDelete(id, name) {
+  if (!confirm(`确定要删除项目“${name}”吗？此操作不可恢复。`)) {
+    return;
+  }
+
+  const res = await fetch(`/api/projects/${id}`, { method: 'DELETE' });
+  if (res.ok) {
+    toast('已删除', 'success');
+    loadProjects();
+    return;
+  }
+  const err = await res.json();
+  toast(err.detail || '删除失败', 'danger');
+}
+
+function showQr(id) {
+  document.getElementById('qrImage').src = `/api/qrcode/${id}?t=${Date.now()}`;
+  getModal('qrModal').show();
+}
+
+function showChangePwModal() {
+  document.getElementById('oldPw').value = '';
+  document.getElementById('newPw').value = '';
+  document.getElementById('confirmNewPw').value = '';
+  getModal('changePwModal').show();
+}
+
+async function savePassword() {
+  const oldPw = document.getElementById('oldPw').value;
+  const newPw = document.getElementById('newPw').value;
+  const confirmPw = document.getElementById('confirmNewPw').value;
+
+  if (!oldPw) { toast('请输入当前密码', 'danger'); return; }
+  if (!newPw || newPw.length < 4) { toast('新密码至少4个字符', 'danger'); return; }
+  if (newPw !== confirmPw) { toast('两次新密码不一致', 'danger'); return; }
+
+  const form = new FormData();
+  form.append('old_password', oldPw);
+  form.append('new_password', newPw);
+
+  try {
+    const res = await fetch('/api/change-password', { method: 'POST', body: form });
+    if (res.ok) {
+      getModal('changePwModal').hide();
+      toast('密码已修改', 'success');
+      return;
+    }
+    const data = await res.json();
+    toast(data.detail || '修改失败', 'danger');
+  } catch {
+    toast('网络错误', 'danger');
+  }
+}
+
+{% if authenticated %}
+loadProjects();
+{% endif %}
+</script>
+</body>
+</html>
