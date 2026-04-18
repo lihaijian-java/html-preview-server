@@ -18,7 +18,10 @@ from starlette.middleware.sessions import SessionMiddleware
 
 import database
 from config import ADMIN_PASSWORD, PORT, HOST, MAX_UPLOAD_SIZE, PROJECTS_DIR, SESSION_SECRET
-from config import ADMIN_TOKEN, MAX_EXTRACT_SIZE
+from config import ADMIN_TOKEN, MAX_EXTRACT_SIZE, WPSJS_DIR
+
+# WPSJS 静态目录挂载
+app.mount("/wpsjs", StaticFiles(directory=WPSJS_DIR, html=True), name="wpsjs")
 
 templates_env = Environment(loader=FileSystemLoader(Path(__file__).parent / "templates"))
 PROJECT_ID_RE = re.compile(r"^[a-z0-9][a-z0-9-]{2,63}$")
@@ -394,7 +397,7 @@ async def upload(request: Request, file: UploadFile = File(...), name: str = For
 
     file_count, total_size = get_project_stats(pdir)
 
-    owner = username  # 管理员上传时 owner 为 None，管理员可在全局管理
+    owner = username if username else "管理员"  # 管理员无 username，设"管理员"
     project = await database.create_project(
         project_id,
         display_name,
