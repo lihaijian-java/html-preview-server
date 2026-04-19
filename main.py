@@ -18,10 +18,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 import database
 from config import ADMIN_PASSWORD, PORT, HOST, MAX_UPLOAD_SIZE, PROJECTS_DIR, SESSION_SECRET
-from config import ADMIN_TOKEN, MAX_EXTRACT_SIZE, WPSJS_DIR
-
-# WPSJS 静态目录挂载
-app.mount("/wpsjs", StaticFiles(directory=WPSJS_DIR, html=True), name="wpsjs")
+from config import ADMIN_TOKEN, MAX_EXTRACT_SIZE
 
 templates_env = Environment(loader=FileSystemLoader(Path(__file__).parent / "templates"))
 PROJECT_ID_RE = re.compile(r"^[a-z0-9][a-z0-9-]{2,63}$")

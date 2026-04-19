@@ -43,5 +43,3 @@ SESSION_SECRET = _get_session_secret()
 # 确保目录存在
 PROJECTS_DIR.mkdir(parents=True, exist_ok=True)
 
-# WPSJS 静态文件目录
-WPSJS_DIR = BASE_DIR / "wpsjs"
