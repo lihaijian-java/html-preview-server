@@ -8,6 +8,7 @@ import zipfile
 from contextlib import asynccontextmanager
 from datetime import datetime
 from pathlib import Path
+from urllib.parse import quote
 
 import qrcode
 from fastapi import FastAPI, Request, UploadFile, File, Form, HTTPException
@@ -125,6 +126,33 @@ async def generate_unique_id(length: int = 6) -> str:
 def is_ignored_zip_member(name: str) -> bool:
     parts = [p for p in Path(name).parts if p not in ("", ".")]
     return not parts or any(part.startswith(".") or part in IGNORED_ZIP_NAMES for part in parts)
+
+
+def contains_cjk(text: str) -> bool:
+    return any("\u4e00" <= ch <= "\u9fff" for ch in text)
+
+
+def should_reopen_zip_as_gbk(zf: zipfile.ZipFile) -> bool:
+    for info in zf.infolist():
+        if info.flag_bits & 0x800:
+            continue
+        try:
+            decoded = info.filename.encode("cp437").decode("gbk")
+        except UnicodeError:
+            continue
+        if decoded != info.filename and contains_cjk(decoded):
+            return True
+    return False
+
+
+def open_upload_zip(content: bytes) -> zipfile.ZipFile:
+    buf = io.BytesIO(content)
+    zf = zipfile.ZipFile(buf)
+    if should_reopen_zip_as_gbk(zf):
+        zf.close()
+        buf = io.BytesIO(content)
+        zf = zipfile.ZipFile(buf, metadata_encoding="gbk")
+    return zf
 
 
 def safe_extract_zip(zf: zipfile.ZipFile, dest: Path) -> list[str]:
@@ -370,9 +398,8 @@ async def upload(request: Request, file: UploadFile = File(...), name: str = For
 
     if suffix == ".zip":
         try:
-            zf = zipfile.ZipFile(io.BytesIO(content))
-            safe_extract_zip(zf, pdir)
-            zf.close()
+            with open_upload_zip(content) as zf:
+                safe_extract_zip(zf, pdir)
             flatten_single_root_dir(pdir)
         except zipfile.BadZipFile:
             shutil.rmtree(pdir, ignore_errors=True)
@@ -583,11 +610,8 @@ async def preview(project_id: str, request: Request):
     except ValueError:
         return HTMLResponse("<h1>项目入口文件无效</h1>", status_code=500)
 
-    if entry_file != "index.html" and entry_path.exists():
-        return RedirectResponse(url=f"/p/{project_id}/{entry_file}", status_code=302)
-
     if entry_path.exists():
-        return FileResponse(entry_path, media_type="text/html")
+        return RedirectResponse(url=f"/p/{project_id}/{quote(entry_file)}", status_code=302)
     return HTMLResponse("<h1>404 - 入口 HTML 不存在</h1>", status_code=404)
 
 
